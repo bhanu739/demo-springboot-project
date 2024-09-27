@@ -1,5 +1,7 @@
 package com.springsec.demo.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -17,6 +19,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "User Management", description = "APIs related to user management")
 public class UserController {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+
     @Autowired
     private UserService userService;
 
@@ -26,7 +30,9 @@ public class UserController {
             description = "Registers a new user by providing necessary user details in the request body."
     )
     public ResponseEntity<User> registerUser(@Validated @RequestBody RegisterUserDto registerUserDto) {
+        logger.info("Received registration request for user: {}", registerUserDto.getUsername());
         User registeredUser = userService.registerUser(registerUserDto);
+        logger.info("User registered successfully: {}", registeredUser.getUsername());
         return ResponseEntity.ok(registeredUser);
     }
 }
