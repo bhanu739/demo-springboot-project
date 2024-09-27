@@ -16,15 +16,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(AbstractHttpConfigurer::disable) // Disable CSRF protection
+                .cors(AbstractHttpConfigurer::disable) // Disable the default CORS configuration
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/v3/api-docs/**",         // OpenAPI docs
                                 "/swagger-ui/**",          // Swagger UI resources
                                 "/swagger-ui.html",        // Swagger UI page
                                 "/api/users/register"      // User registration
-                        ).permitAll()
-                        .anyRequest().authenticated()
+                        ).permitAll() // Allow public access to these endpoints
+                        .anyRequest().authenticated() // All other requests require authentication
                 );
 
         return http.build();
