@@ -1,6 +1,7 @@
 package com.springsec.demo.controller;
 
 import com.springsec.demo.dto.LoginRequest;
+import com.springsec.demo.exception.Error;
 import com.springsec.demo.service.impl.UserDetailsServiceImpl;
 import com.springsec.demo.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Date;
 
 @RestController
 @RequestMapping("/api/users")
@@ -26,7 +29,7 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
 
@@ -35,8 +38,13 @@ public class AuthController {
 
             return ResponseEntity.ok(token);
         } catch (AuthenticationException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+            Error errorResponse = Error.builder()
+                    .timestamp(new Date())
+                    .status(HttpStatus.UNAUTHORIZED.value())
+                    .message("Invalid credentials")
+                    .path("/api/users/login")
+                    .build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         }
     }
 }
-

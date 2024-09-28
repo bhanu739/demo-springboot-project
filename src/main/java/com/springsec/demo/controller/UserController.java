@@ -3,7 +3,6 @@ package com.springsec.demo.controller;
 import com.springsec.demo.dto.UserRegistrationResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import com.springsec.demo.dto.RegisterUserDto;
