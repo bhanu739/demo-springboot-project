@@ -13,9 +13,24 @@ public class ExceptionHandler {
 
     @org.springframework.web.bind.annotation.ExceptionHandler(value = UserAlreadyExistsException.class)
     public ResponseEntity<Error> handleUserAlreadyExistsException(RuntimeException exception, ServletWebRequest webRequest) {
-        Error error = Error.builder().timestamp(new Date()).status(409).message(
-                exception.getMessage()).path(webRequest.getRequest().getRequestURI()).build();
-        return new ResponseEntity<>(error,HttpStatus.CONFLICT);
+        Error error = Error.builder()
+                .timestamp(new Date())
+                .status(409)
+                .message(exception.getMessage())
+                .path(webRequest.getRequest().getRequestURI())
+                .build();
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @org.springframework.web.bind.annotation.ExceptionHandler(value = InvalidPasswordException.class)
+    public ResponseEntity<Error> handleInvalidPasswordException(RuntimeException exception, ServletWebRequest webRequest) {
+        Error error = Error.builder()
+                .timestamp(new Date())
+                .status(400)
+                .message(exception.getMessage())
+                .path(webRequest.getRequest().getRequestURI())
+                .build();
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
 }

@@ -1,8 +1,8 @@
 package com.springsec.demo.service;
 
 import com.springsec.demo.dto.RegisterUserDto;
-import com.springsec.demo.entity.User;
+import com.springsec.demo.dto.UserRegistrationResponse;
 
 public interface UserService {
-    User registerUser(RegisterUserDto registerUserDto);
+    UserRegistrationResponse registerUser(RegisterUserDto registerUserDto);
 }
