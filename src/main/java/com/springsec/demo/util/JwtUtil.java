@@ -1,6 +1,10 @@
 package com.springsec.demo.util;
 
+import com.springsec.demo.exception.JwtTokenExpiredException;
+import com.springsec.demo.exception.JwtTokenInvalidException;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -44,13 +48,26 @@ public class JwtUtil {
 
     // Validate the token
     public boolean validateToken(String token, String email) {
-        final String username = extractUsername(token);
-        return (username.equals(email) && !isTokenExpired(token));
+        try {
+            final String username = extractUsername(token);
+
+            // Check if the token belongs to the given email and is not expired
+            if (username.equals(email) && !isTokenExpired(token)) {
+                return true;
+            } else {
+                throw new JwtTokenInvalidException("JWT token is invalid");
+            }
+        } catch (ExpiredJwtException e) {
+            throw new JwtTokenExpiredException("JWT token has expired");
+        } catch (JwtException e) {
+            throw new JwtTokenInvalidException("JWT token invalid");
+        }
     }
+
 
     // Extract username from the token
     public String extractUsername(String token) {
-        return extractAllClaims(token).getSubject();
+      return extractAllClaims(token).getSubject();
     }
 
     // Check if the token is expired

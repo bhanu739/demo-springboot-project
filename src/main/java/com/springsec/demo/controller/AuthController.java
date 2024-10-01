@@ -1,6 +1,7 @@
 package com.springsec.demo.controller;
 
 import com.springsec.demo.dto.LoginRequest;
+import com.springsec.demo.dto.LoginResponse;
 import com.springsec.demo.exception.Error;
 import com.springsec.demo.service.impl.UserDetailsServiceImpl;
 import com.springsec.demo.util.JwtUtil;
@@ -31,12 +32,19 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
+            // Authenticate the user
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
 
+            // Load user details
             UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getEmail());
-            String token = jwtUtil.generateToken(userDetails.getUsername(), userDetails.getAuthorities().iterator().next().getAuthority());
 
-            return ResponseEntity.ok(token);
+            // Generate JWT token
+            String role = userDetails.getAuthorities().iterator().next().getAuthority();
+            String token = jwtUtil.generateToken(userDetails.getUsername(), role);
+
+            LoginResponse loginResponse = new LoginResponse(userDetails.getUsername(), loginRequest.getEmail(), role, token);
+            return ResponseEntity.ok(loginResponse);
+
         } catch (AuthenticationException e) {
             Error errorResponse = Error.builder()
                     .timestamp(new Date())
@@ -44,6 +52,7 @@ public class AuthController {
                     .message("Invalid credentials")
                     .path("/api/users/login")
                     .build();
+
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         }
     }

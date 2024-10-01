@@ -33,4 +33,28 @@ public class ExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    // Handle JWT Token Expired Exception
+    @org.springframework.web.bind.annotation.ExceptionHandler(value = JwtTokenExpiredException.class)
+    public ResponseEntity<Error> handleJwtTokenExpiredException(JwtTokenExpiredException exception, ServletWebRequest webRequest) {
+        Error error = Error.builder()
+                .timestamp(new Date())
+                .status(401)
+                .message(exception.getMessage())
+                .path(webRequest.getRequest().getRequestURI())
+                .build();
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    }
+
+    // Handle JWT Token Invalid Exception
+    @org.springframework.web.bind.annotation.ExceptionHandler(value = JwtTokenInvalidException.class)
+    public ResponseEntity<Error> handleJwtTokenInvalidException(JwtTokenInvalidException exception, ServletWebRequest webRequest) {
+        Error error = Error.builder()
+                .timestamp(new Date())
+                .status(400)
+                .message(exception.getMessage())
+                .path(webRequest.getRequest().getRequestURI())
+                .build();
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
 }

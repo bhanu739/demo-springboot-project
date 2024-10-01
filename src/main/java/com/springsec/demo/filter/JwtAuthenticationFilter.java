@@ -1,6 +1,8 @@
 package com.springsec.demo.filter;
 
 import com.springsec.demo.util.JwtUtil;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -32,7 +34,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
-            email = jwtUtil.extractUsername(token); // Extract the email from the token
+            try {
+                email = jwtUtil.extractUsername(token);
+            } catch (ExpiredJwtException e) {
+                request.setAttribute("exception", "JWT token has expired");
+                filterChain.doFilter(request, response);
+                return;
+            } catch (JwtException e) {
+                request.setAttribute("exception", "JWT token is invalid");
+                filterChain.doFilter(request, response);
+                return;
+            }
         }
 
         // If token is valid and user is not authenticated
