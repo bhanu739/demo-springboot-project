@@ -1,103 +1,3 @@
-indian_state_codes = [
-    'AP', 'AR', 'AS', 'BR', 'CG', 'GA', 'GJ', 'HR', 'HP', 'JH', 'KA', 'KL', 'MP', 'MH', 'MN', 'ML', 'MZ', 'NL',
-    'OD', 'PB', 'RJ', 'SK', 'TN', 'TS', 'TR', 'UP', 'UK', 'WB', 'AN', 'CH', 'DN', 'DD', 'DL', 'LD', 'PY'
-]
-
-# distributor_names
-distributor_names = [
-    "Global Supply Solutions",
-    "Prime Distributors Ltd",
-    "Evergreen Wholesale",
-    "Skyline Distribution Co.",
-    "Summit Trade Partners"
-]
-
-# transporter_names
-transporters = [
-        'Rapid Freight Services',
-        'Blue Horizon Logistics',
-        'Swift Haulage Solutions',
-        'CargoTrans Movers',
-        'Velocity Transport Co.'
-    ]
-
-# Address
-address_data = [
-    {
-        "pickup_address": "52, Street Number 4, Kalyan Nagar Phase 1, AG Colony, Jawahar Nagar, Hyderabad, Telangana 500045",
-        "delivery_address": "9CX8+J74, Janaki Nagar Colony, Toli Chowki, Hyderabad, Telangana 500008",
-        "pickup_city": "Hyderabad",
-        "delivery_city": "Hyderabad",
-        "pickup_state": "Telangana",
-        "delivery_state": "Telangana",
-        "pickup_pincode": "500045",
-        "delivery_pincode": "500008",
-        "consignee_name": "Global Supply Solutions",
-        "distributor_name": "Global Supply Solutions"
-    },
-    {
-        "pickup_address": "701-501, Cardinal Gracious Rd, Mota Nagar, Andheri East, Mumbai, Maharashtra 400059",
-        "delivery_address": "1701, G-Square Business Park, 25 & 26, opposite Sanpada Railway Station Road, Station, Sector 30A, Vashi, Navi Mumbai, Maharashtra 400703",
-        "pickup_city": "Mumbai",
-        "delivery_city": "Mumbai",
-        "pickup_state": "Maharashtra",
-        "delivery_state": "Maharashtra",
-        "pickup_pincode": "400059",
-        "delivery_pincode": "400703",
-        "consignee_name": "Prime Distributors Ltd",
-        "distributor_name": "Prime Distributors Ltd"
-    },
-    {
-        "pickup_address": "S-5,6,7 IInd Floor, Pankaj Arcade, Plot No.-5, Pocket -IV, Sector 11 Dwarka, Dwarka, New Delhi, Delhi, 110075",
-        "delivery_address": "Plot No. 27, Sher Singh Enclave, Gopal Nagar Ext, Main Khera Rd, opp. HP Petrol Pump, Najafgarh, New Delhi, Delhi 110043",
-        "pickup_city": "Delhi",
-        "delivery_city": "Delhi",
-        "pickup_state": "Delhi",
-        "delivery_state": "Delhi",
-        "pickup_pincode": "110075",
-        "delivery_pincode": "110043",
-        "consignee_name": "Evergreen Wholesale",
-        "distributor_name": "Evergreen Wholesale"
-    },
-    {
-        "pickup_address": "121, Chittaranjan Ave, College Street Market, Jorasanko, Kolkata, West Bengal 700073",
-        "delivery_address": "IRC Ltd 2, Century CFS Sonai Rd, next to ITC warehouse, Kolkata, West Bengal 700023",
-        "pickup_city": "Kolkata",
-        "delivery_city": "Kolkata",
-        "pickup_state": "West Bengal",
-        "delivery_state": "West Bengal",
-        "pickup_pincode": "700073",
-        "delivery_pincode": "700023",
-        "consignee_name": "Skyline Distribution Co.",
-        "distributor_name": "Skyline Distribution Co."
-    },
-    {
-        "pickup_address": "No.97(Old No.47),Linghi Chetty Street Chennai- 600 001, Chennai, Tamil Nadu 600001",
-        "delivery_address": "14, Murrays Gate Rd, Vannia Teynampet, Venus Colony, Alwarpet, Chennai, Tamil Nadu 600018",
-        "pickup_city": "Chennai",
-        "delivery_city": "Chennai",
-        "pickup_state": "Tamil Nadu",
-        "delivery_state": "Tamil Nadu",
-        "pickup_pincode": "600001",
-        "delivery_pincode": "600018",
-        "consignee_name": "Summit Trade Partners",
-        "distributor_name": "Summit Trade Partners"
-    },
-    {
-        "pickup_address": "LD-237, Hindnagar Colony, Transport Nagar, Lucknow, Uttar Pradesh 226012",
-        "delivery_address": "RWXX+824 New Janpath Complex, H.O.:, Ashok Marg, opposite Income tax office, Sadullah Nagar, Narhi, Hazratganj, Lucknow, Uttar Pradesh 226001",
-        "pickup_city": "Lucknow",
-        "delivery_city": "Lucknow",
-        "pickup_state": "Uttar Pradesh",
-        "delivery_state": "Uttar Pradesh",
-        "pickup_pincode": "226012",
-        "delivery_pincode": "226001",
-        "consignee_name": "Global Supply Solutions",
-        "distributor_name": "Global Supply Solutions"
-    }
-]
-
-
 import psycopg2
 from psycopg2 import sql
 from faker import Faker
@@ -108,6 +8,8 @@ import datetime
 import re
 import pytz
 import googlemaps
+import json
+import os
 
 from datetime import datetime, timedelta, timezone
 
@@ -149,10 +51,16 @@ def generate_and_insert_consignee_data():
     global consignee_id
     global pickup_address
     global delivery_address
+
+    def generate_indian_phone_number():
+        first_digit = random.choice(['7', '8', '9'])
+        remaining_digits = ''.join(random.choices(string.digits, k=9))  # Remaining 9 digits
+        return first_digit + remaining_digits
+
     address_entry = random.choice(address_data)
 
     consignee_name = address_entry["consignee_name"]
-    consignee_mobile_number = fake.phone_number()
+    consignee_mobile_number = generate_indian_phone_number()
     pickup_address = address_entry["pickup_address"]
     delivery_address = address_entry["delivery_address"]
     pickup_city = address_entry["pickup_city"]
@@ -429,6 +337,74 @@ def insert_consignment_status(new_consignment_id, vehicle_number, pickup_address
     ))
     print(f"LOADING status inserted for consignment ID {new_consignment_id}.")
 
+def get_route_points(vehicle_number, consignment_id, origin, destination):
+
+    file_name = f"{pickup_address}_{delivery_address}_route_points.json"
+
+    # Check if the file already exists
+    if os.path.exists(file_name):
+        print(f"File '{file_name}' already exists. Updating vehicle number...")
+
+        # Load the existing JSON data
+        with open(file_name, 'r') as json_file:
+            existing_data = json.load(json_file)
+
+        # Update the vehicle number for all points in the existing file
+        for point in existing_data:
+            point['vehicleNumber'] = vehicle_number
+
+        # Save the updated data back to the file
+        with open(file_name, 'w') as json_file:
+            json.dump(existing_data, json_file, indent=4)
+
+        print(f"Updated vehicle number in '{file_name}'")
+        return
+
+    directions_result = gmaps.directions(origin, destination, mode="driving", units="metric")
+
+    # Extract the steps and points (latitude, longitude)
+    all_points = []
+    point_counter = 0  # Initialize counter to track every 4th point
+    if directions_result and len(directions_result) > 0:
+        for leg in directions_result[0]['legs']:
+            for step in leg['steps']:
+                start_location = step['start_location']
+                end_location = step['end_location']
+
+                if point_counter % 4 == 0:
+                    all_points.append({
+                        'vehicleNumber': vehicle_number,
+                        'latitude': start_location['lat'],
+                        'longitude': start_location['lng']
+                    })
+                point_counter += 1
+
+                if point_counter % 4 == 0:
+                    all_points.append({
+                        'vehicleNumber': vehicle_number,
+                        'latitude': end_location['lat'],
+                        'longitude': end_location['lng']
+                    })
+                point_counter += 1
+
+                polyline = step['polyline']['points']
+                decoded_points = googlemaps.convert.decode_polyline(polyline)
+                for point in decoded_points:
+                    if point_counter % 4 == 0:
+                        all_points.append({
+                            'vehicleNumber': vehicle_number,
+                            'latitude': point['lat'],
+                            'longitude': point['lng']
+                        })
+                    point_counter += 1
+
+    # Save route points to JSON file in the current path
+    file_name = f"{pickup_address}_{delivery_address}_route_points.json"
+    with open(file_name, 'w') as json_file:
+        json.dump(all_points, json_file, indent=4)
+
+    print(f"Route points saved to {file_name}")
+
 
 pickup_address, delivery_address = generate_and_insert_consignee_data()
 generate_and_insert_vehicle_data()
@@ -437,6 +413,7 @@ generate_and_insert_driver_data()
 insert_vehicle_transit_details(driver_id_created, new_lane_id, vehicle_number_created)
 generate_and_insert_consignment_data(vehicle_transit_id_created, vehicle_number_created, new_lane_id, consignee_id)
 insert_consignment_status(new_consignment_id, vehicle_number_created, pickup_address)
+get_route_points(vehicle_number_created, new_consignment_id, pickup_address, delivery_address)
 
 
 # Commit the changes and close the connection
