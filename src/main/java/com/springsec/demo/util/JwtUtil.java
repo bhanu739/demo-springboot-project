@@ -35,7 +35,7 @@ public class JwtUtil {
     // Generate a JWT token
     public String generateToken(String email, String role) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", role); // Add the role to the claims
+        claims.put("role", role);
 
         return Jwts.builder()
                 .claims(claims)
@@ -76,7 +76,7 @@ public class JwtUtil {
     }
 
     // Extract all claims from the token
-    private Claims extractAllClaims(String token) {
+    public Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()

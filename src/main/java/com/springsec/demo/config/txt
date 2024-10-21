@@ -1,0 +1,445 @@
+indian_state_codes = [
+    'AP', 'AR', 'AS', 'BR', 'CG', 'GA', 'GJ', 'HR', 'HP', 'JH', 'KA', 'KL', 'MP', 'MH', 'MN', 'ML', 'MZ', 'NL',
+    'OD', 'PB', 'RJ', 'SK', 'TN', 'TS', 'TR', 'UP', 'UK', 'WB', 'AN', 'CH', 'DN', 'DD', 'DL', 'LD', 'PY'
+]
+
+# distributor_names
+distributor_names = [
+    "Global Supply Solutions",
+    "Prime Distributors Ltd",
+    "Evergreen Wholesale",
+    "Skyline Distribution Co.",
+    "Summit Trade Partners"
+]
+
+# transporter_names
+transporters = [
+        'Rapid Freight Services',
+        'Blue Horizon Logistics',
+        'Swift Haulage Solutions',
+        'CargoTrans Movers',
+        'Velocity Transport Co.'
+    ]
+
+# Address
+address_data = [
+    {
+        "pickup_address": "52, Street Number 4, Kalyan Nagar Phase 1, AG Colony, Jawahar Nagar, Hyderabad, Telangana 500045",
+        "delivery_address": "9CX8+J74, Janaki Nagar Colony, Toli Chowki, Hyderabad, Telangana 500008",
+        "pickup_city": "Hyderabad",
+        "delivery_city": "Hyderabad",
+        "pickup_state": "Telangana",
+        "delivery_state": "Telangana",
+        "pickup_pincode": "500045",
+        "delivery_pincode": "500008",
+        "consignee_name": "Global Supply Solutions",
+        "distributor_name": "Global Supply Solutions"
+    },
+    {
+        "pickup_address": "701-501, Cardinal Gracious Rd, Mota Nagar, Andheri East, Mumbai, Maharashtra 400059",
+        "delivery_address": "1701, G-Square Business Park, 25 & 26, opposite Sanpada Railway Station Road, Station, Sector 30A, Vashi, Navi Mumbai, Maharashtra 400703",
+        "pickup_city": "Mumbai",
+        "delivery_city": "Mumbai",
+        "pickup_state": "Maharashtra",
+        "delivery_state": "Maharashtra",
+        "pickup_pincode": "400059",
+        "delivery_pincode": "400703",
+        "consignee_name": "Prime Distributors Ltd",
+        "distributor_name": "Prime Distributors Ltd"
+    },
+    {
+        "pickup_address": "S-5,6,7 IInd Floor, Pankaj Arcade, Plot No.-5, Pocket -IV, Sector 11 Dwarka, Dwarka, New Delhi, Delhi, 110075",
+        "delivery_address": "Plot No. 27, Sher Singh Enclave, Gopal Nagar Ext, Main Khera Rd, opp. HP Petrol Pump, Najafgarh, New Delhi, Delhi 110043",
+        "pickup_city": "Delhi",
+        "delivery_city": "Delhi",
+        "pickup_state": "Delhi",
+        "delivery_state": "Delhi",
+        "pickup_pincode": "110075",
+        "delivery_pincode": "110043",
+        "consignee_name": "Evergreen Wholesale",
+        "distributor_name": "Evergreen Wholesale"
+    },
+    {
+        "pickup_address": "121, Chittaranjan Ave, College Street Market, Jorasanko, Kolkata, West Bengal 700073",
+        "delivery_address": "IRC Ltd 2, Century CFS Sonai Rd, next to ITC warehouse, Kolkata, West Bengal 700023",
+        "pickup_city": "Kolkata",
+        "delivery_city": "Kolkata",
+        "pickup_state": "West Bengal",
+        "delivery_state": "West Bengal",
+        "pickup_pincode": "700073",
+        "delivery_pincode": "700023",
+        "consignee_name": "Skyline Distribution Co.",
+        "distributor_name": "Skyline Distribution Co."
+    },
+    {
+        "pickup_address": "No.97(Old No.47),Linghi Chetty Street Chennai- 600 001, Chennai, Tamil Nadu 600001",
+        "delivery_address": "14, Murrays Gate Rd, Vannia Teynampet, Venus Colony, Alwarpet, Chennai, Tamil Nadu 600018",
+        "pickup_city": "Chennai",
+        "delivery_city": "Chennai",
+        "pickup_state": "Tamil Nadu",
+        "delivery_state": "Tamil Nadu",
+        "pickup_pincode": "600001",
+        "delivery_pincode": "600018",
+        "consignee_name": "Summit Trade Partners",
+        "distributor_name": "Summit Trade Partners"
+    },
+    {
+        "pickup_address": "LD-237, Hindnagar Colony, Transport Nagar, Lucknow, Uttar Pradesh 226012",
+        "delivery_address": "RWXX+824 New Janpath Complex, H.O.:, Ashok Marg, opposite Income tax office, Sadullah Nagar, Narhi, Hazratganj, Lucknow, Uttar Pradesh 226001",
+        "pickup_city": "Lucknow",
+        "delivery_city": "Lucknow",
+        "pickup_state": "Uttar Pradesh",
+        "delivery_state": "Uttar Pradesh",
+        "pickup_pincode": "226012",
+        "delivery_pincode": "226001",
+        "consignee_name": "Global Supply Solutions",
+        "distributor_name": "Global Supply Solutions"
+    }
+]
+
+
+import psycopg2
+from psycopg2 import sql
+from faker import Faker
+import random
+import uuid
+import string
+import datetime
+import re
+import pytz
+import googlemaps
+
+from datetime import datetime, timedelta, timezone
+
+gmaps = googlemaps.Client(key='AIzaSyDIvsLc2hzvuCQljrb01fugnqZ-Ck7Ap8A')
+
+
+# Database connection details
+db_host = "control-tower.postgres.database.azure.com"
+db_port = "5432"
+db_name = "postgres"
+db_user = "CotrolTower"
+db_password = "Admin@12345"
+
+# Create connection to PostgreSQL
+connection = psycopg2.connect(
+    host=db_host,
+    port=db_port,
+    dbname=db_name,
+    user=db_user,
+    password=db_password
+)
+
+cursor = connection.cursor()
+
+fake = Faker()
+
+# Create a timezone object for IST
+ist = pytz.timezone('Asia/Kolkata')
+
+def generate_vehicle_number():
+    state_code = random.choice(indian_state_codes)
+    rto_code = f"{random.randint(1, 99):02d}"  # 2-digit RTO code
+    series = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ', k=2))  # 2-letter series
+    number = f"{random.randint(1, 9999):04d}"  # 4-digit vehicle number
+    return f"{state_code}{rto_code}{series}{number}"
+
+def generate_and_insert_consignee_data():
+
+    global consignee_id
+    global pickup_address
+    global delivery_address
+    address_entry = random.choice(address_data)
+
+    consignee_name = address_entry["consignee_name"]
+    consignee_mobile_number = fake.phone_number()
+    pickup_address = address_entry["pickup_address"]
+    delivery_address = address_entry["delivery_address"]
+    pickup_city = address_entry["pickup_city"]
+    pickup_state = address_entry["pickup_state"]
+    pickup_pincode = address_entry["pickup_pincode"]
+    delivery_city = address_entry["delivery_city"]
+    delivery_state = address_entry["delivery_state"]
+    delivery_pincode = address_entry["delivery_pincode"]
+    distributor_name = address_entry["distributor_name"]
+
+    insert_query = sql.SQL("""
+        INSERT INTO public.consignee
+        (consignee_name, consignee_mobile_number, pickup_address, delivery_address,
+         pickup_city, pickup_state, pickup_pincode, delivery_city, delivery_state, delivery_pincode,
+         distributor_name)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING consignee_id;  -- Return the consignee_id
+    """)
+
+    cursor.execute(insert_query, (
+        consignee_name, consignee_mobile_number, pickup_address, delivery_address,
+        pickup_city, pickup_state, pickup_pincode, delivery_city, delivery_state, delivery_pincode,
+        distributor_name
+    ))
+
+    consignee_id = cursor.fetchone()[0]
+    print(f"Consignee ID created: {consignee_id}")
+
+    return pickup_address, delivery_address
+
+def generate_and_insert_vehicle_data():
+
+    global vehicle_number_created
+
+    vehicle_engine_types = ['BS4', 'BS6']
+    vehicle_availabilities = ['ASSIGNED']
+    fuel_types = ['PETROL', 'DIESEL']
+
+    # Generate synthetic vehicle data
+    vehicle_number = generate_vehicle_number()
+    vehicle_engine_type = random.choice(vehicle_engine_types)
+    distance_covered = random.randint(10000, 100000)
+    loading_capacity = random.randint(5, 20)
+    loaded_capacity = round(random.uniform(1, loading_capacity), 2)
+    truck_volume = random.randint(1000, 5000)
+    vehicle_availability = random.choice(vehicle_availabilities)
+    fuel_type = random.choice(fuel_types)
+    mileage = round(random.uniform(5, 20), 2)
+    owner_name = fake.name()
+    engine_number = ''.join(random.choices(string.ascii_uppercase + string.digits, k=15))
+    chassis_number = ''.join(random.choices(string.ascii_uppercase + string.digits, k=15))
+    fit_upto = fake.date_between(start_date='-5y', end_date='+5y').strftime("%Y-%m-%d")
+    maintenance_due_date = fake.date_between(start_date='-1y', end_date='+1y').strftime("%Y-%m-%d")
+    make_year = random.randint(2000, 2023)
+    transporter_name = random.choice(transporters)
+
+    insert_query = sql.SQL("""
+        INSERT INTO public.vehicle
+        (vehicle_number, vehicle_engine_type, distance_covered, loading_capacity, loaded_capacity, truck_volume,
+         vehicle_availability, fuel_type, mileage, owner_name, engine_number, chassis_number,
+         fit_upto, make_year, maintenance_due_date, transporter_name)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING vehicle_number;  -- Return the vehicle number
+    """)
+
+    cursor.execute(insert_query, (
+        vehicle_number, vehicle_engine_type, distance_covered, loading_capacity, loaded_capacity, truck_volume,
+        vehicle_availability, fuel_type, mileage, owner_name, engine_number, chassis_number,
+        fit_upto, make_year, maintenance_due_date, transporter_name
+    ))
+
+    vehicle_number_created = cursor.fetchone()[0]
+    print(f"Vehicle Number created: {vehicle_number_created}")
+
+
+def generate_and_insert_lane_info_data(origin, destination):
+    global new_lane_id
+
+    # Check if the lane with the same origin and destination already exists
+    check_query = """
+        SELECT lane_id FROM public.lane_info
+        WHERE origin = %s AND destination = %s;
+    """
+    cursor.execute(check_query, (origin, destination))
+    result = cursor.fetchone()
+
+    if result:
+        # If the lane already exists, use the existing lane_id
+        new_lane_id = result[0]
+        print(f"Lane already exists with lane_id: {new_lane_id}")
+    else:
+        # If not, generate a new lane_id
+        cursor.execute("SELECT COALESCE(MAX(lane_id), 0) FROM public.lane_info;")
+        max_lane_id = cursor.fetchone()[0]
+
+        new_lane_id = max_lane_id + 1
+
+        # Insert a new lane record
+        insert_query = """
+            INSERT INTO public.lane_info
+            (lane_id, origin, destination)
+            VALUES (%s, %s, %s);
+        """
+        cursor.execute(insert_query, (new_lane_id, origin, destination))
+
+        print(f"New lane created with lane_id: {new_lane_id}")
+
+def generate_and_insert_driver_data():
+    global driver_id_created
+
+    # Function to generate a 10-digit Indian phone number starting with 7, 8, or 9
+    def generate_indian_phone_number():
+        first_digit = random.choice(['7', '8', '9'])
+        remaining_digits = ''.join(random.choices(string.digits, k=9))  # Remaining 9 digits
+        return first_digit + remaining_digits
+
+    # Fetch the maximum driver_id from the driver table
+    cursor.execute("SELECT COALESCE(MAX(driver_id), 0) FROM public.driver;")
+    max_driver_id = cursor.fetchone()[0]
+    new_driver_id = max_driver_id + 1  # Increment driver_id by 1
+
+    # Generate synthetic driver data
+    license_number = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))  # Random 10-character license number
+    driver_name = fake.name()
+    driver_contact_number = generate_indian_phone_number()  # Valid Indian 10-digit phone number
+    driver_emergency_contact_number = generate_indian_phone_number()  # Valid Indian 10-digit phone number
+    license_expiry_date = fake.date_between(start_date='-1y', end_date='+5y').strftime("%Y-%m-%d")
+
+    # Prepare the insert query for the driver table
+    insert_query = sql.SQL("""
+        INSERT INTO public.driver
+        (driver_id, license_number, driver_name, driver_contact_number, driver_emergency_contact_number, license_expiry_date)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        RETURNING driver_id;  -- Return the driver_id after insertion
+    """)
+
+    cursor.execute(insert_query, (
+        new_driver_id, license_number, driver_name, driver_contact_number, driver_emergency_contact_number, license_expiry_date
+    ))
+
+    driver_id_created = cursor.fetchone()[0]
+    print(f"Driver ID created: {driver_id_created}")
+
+def insert_vehicle_transit_details(driver_id, lane_id, vehicle_number):
+
+    global vehicle_transit_id_created
+    insert_query = """
+        INSERT INTO public.vehicle_transit_details
+        (vehicle_number, lane_id, driver_id)
+        VALUES (%s, %s, %s)
+        RETURNING vehicle_transit_id;  -- Return the inserted vehicle_transit_id
+    """
+
+    cursor.execute(insert_query, (vehicle_number, lane_id, driver_id))
+
+    vehicle_transit_id_created = cursor.fetchone()[0]
+    print(f"Vehicle Transit ID created: {vehicle_transit_id_created}")
+
+def generate_and_insert_consignment_data(vehicle_transit_id, vehicle_number, lane_id, consignee_id):
+
+    global new_consignment_id
+
+    cursor.execute("SELECT MAX(consignment_id) FROM public.consignment WHERE consignment_id ~ '^C[0-9]+$';")
+    max_consignment_id = cursor.fetchone()[0]
+
+    # If there's no existing consignment_id, start from C1000
+    if max_consignment_id:
+        numeric_part = int(re.search(r'\d+', max_consignment_id).group())
+        new_numeric_part = numeric_part + 1
+    else:
+        new_numeric_part = 1000  # Start from C1000 if no consignment IDs exist
+
+    new_consignment_id = f"C{new_numeric_part}"
+
+    # current time in UTC
+    current_time_utc = datetime.utcnow()
+
+    distance_matrix = gmaps.distance_matrix(origins=pickup_address,
+                                            destinations=delivery_address,
+                                            mode="driving",
+                                            departure_time="now")
+
+    travel_duration_seconds = distance_matrix['rows'][0]['elements'][0]['duration']['value']
+
+    # Calculate ETA in UTC
+    eta_utc = current_time_utc + timedelta(seconds=travel_duration_seconds)
+
+    # Add 5 hours and 30 minutes to convert UTC to IST
+    eta_ist_adjusted = eta_utc + timedelta(hours=5, minutes=30)
+
+    consignment_date_ist= current_time_utc + timedelta(hours=5, minutes=30) -timedelta(hours=3)
+
+
+    consignment_type = "Fragile"
+    temperature_categories = "Dry"
+    min_temp = random.randint(-10, 5)
+    max_temp = random.randint(5, 25)
+    priority = fake.random_element(elements=["HIGH", "LOW", "MEDIUM"])
+    consignment_value = random.randint(1000, 10000)
+    number_of_items = random.randint(1, 100)
+    consignment_weight = random.randint(20, 40)
+    consignment_volume = random.randint(10, 100)
+    shipping_cost = random.randint(100, 1000)
+    delivery_notes = "test data"
+    organization_name = fake.random_element(elements=["ABX Pvt ltd.", "CTX Pvt ltd.", "AMC Pvt ltd."])
+
+    # Insert new consignment record
+    insert_query = """
+        INSERT INTO public.consignment
+        (consignment_id, vehicle_number, vehicle_transit_id, lane_id, consignee_id,
+        estimated_time_of_arrival, consignment_date, delivery_status, delivery_date,
+        consignment_type, temperature_categories, min_temp, max_temp, priority,
+        consignment_value, number_of_items, consignment_weight, consignment_volume,
+        shipping_cost, delivery_notes, organization_name)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+    """
+
+    cursor.execute(insert_query, (
+        new_consignment_id,           # consignment_id
+        vehicle_number,               # vehicle_number
+        vehicle_transit_id,           # vehicle_transit_id
+        lane_id,                      # lane_id
+        consignee_id,                 # consignee_id
+        eta_ist_adjusted,             # estimated_time_of_arrival
+        consignment_date_ist,         # consignment_date
+        'DELIVERY_PENDING',           # delivery_status
+        None,                         # delivery_date (null)
+        consignment_type,             # consignment_type
+        temperature_categories,       # temperature_categories
+        min_temp,                     # min_temp
+        max_temp,                     # max_temp
+        priority,                     # priority
+        consignment_value,            # consignment_value
+        number_of_items,              # number_of_items
+        consignment_weight,           # consignment_weight
+        consignment_volume,           # consignment_volume
+        shipping_cost,                # shipping_cost
+        delivery_notes,               # delivery_notes
+        organization_name             # organization_name
+    ))
+
+    print(f"Consignment with ID {new_consignment_id} inserted successfully.")
+
+def insert_consignment_status(new_consignment_id, vehicle_number, pickup_address):
+    insert_status_query = """
+        INSERT INTO public.consignment_status
+        (consignment_id, vehicle_number, status, status_date, is_not_shown, check_point)
+        VALUES (%s, %s, %s, %s, %s, %s);
+    """
+
+    current_time_utc = datetime.utcnow()
+    status_yet_to_load_date = current_time_utc + timedelta(hours=5, minutes=30) - timedelta(hours=2)
+
+    cursor.execute(insert_status_query, (
+        new_consignment_id,         # consignment_id
+        vehicle_number,             # vehicle_number
+        'YET_TO_LOAD',              # status
+        status_yet_to_load_date,    # status_date
+        False,                      # is_not_shown (default False)
+        pickup_address
+    ))
+    print(f"YET_TO_LOAD status inserted for consignment ID {new_consignment_id}.")
+
+    current_time_utc = datetime.utcnow()
+    status_loading_date = current_time_utc + timedelta(hours=5, minutes=30) - timedelta(hours=1)
+
+    cursor.execute(insert_status_query, (
+        new_consignment_id,         # consignment_id
+        vehicle_number,             # vehicle_number
+        'LOADING',                  # status
+        status_loading_date,        # status_date
+        False,                      # is_not_shown (default False)
+        pickup_address
+    ))
+    print(f"LOADING status inserted for consignment ID {new_consignment_id}.")
+
+
+pickup_address, delivery_address = generate_and_insert_consignee_data()
+generate_and_insert_vehicle_data()
+generate_and_insert_lane_info_data(pickup_address, delivery_address)
+generate_and_insert_driver_data()
+insert_vehicle_transit_details(driver_id_created, new_lane_id, vehicle_number_created)
+generate_and_insert_consignment_data(vehicle_transit_id_created, vehicle_number_created, new_lane_id, consignee_id)
+insert_consignment_status(new_consignment_id, vehicle_number_created, pickup_address)
+
+
+# Commit the changes and close the connection
+connection.commit()
+cursor.close()
+connection.close()
